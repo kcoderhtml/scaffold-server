@@ -17,6 +17,8 @@ interface Image {
     uri: string
     owner: string
 }
+
+console.log("----------------------------------\nScaffold Server\n----------------------------------\n")
 console.log("🚀 Starting server")
 
 console.log("📦 Loading SQLite DB")
@@ -198,4 +200,4 @@ const elysia = new Elysia()
     .listen(4221)
 
 console.log("✅ Elysia started at http://localhost:4221")
-console.log("🚀 Server Started in", Bun.nanoseconds() / 1000000, "milliseconds!")
+console.log("🚀 Server Started in", Bun.nanoseconds() / 1000000, "milliseconds!", "\n\n----------------------------------\n")

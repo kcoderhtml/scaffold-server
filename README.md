@@ -57,3 +57,45 @@ fetch('http://localhost:4221/query', {
     })
 })
 ```
+
+To generate a token:
+
+```bash
+curl -X POST -H "Authorization: supersecrettoken" http://localhost:4221/token/new -d '{"userID": "kieran"}'
+```
+
+or as a fetch:
+
+```typescript
+fetch('http://localhost:4221/token/new', {
+    method: 'POST',
+    headers: {
+        'Authorization': 'supersecrettoken',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        userID: 'kieran'
+    })
+})
+```
+
+To delete a token:
+
+```bash
+curl -X POST -H "Authorization: supersecrettoken" http://localhost:4221/token/remove -d '{"token": "7e09bb82-5b78-4688-acbd-9d6c7ae49b60"}'
+```
+
+or as a fetch:
+
+```typescript
+fetch('http://localhost:4221/token/remove', {
+    method: 'POST',
+    headers: {
+        'Authorization: supersecrettoken',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        token: '7e09bb82-5b78-4688-acbd-9d6c7ae49b60'
+    })
+})
+```

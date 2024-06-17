@@ -1,6 +1,9 @@
 import { count, create, insert, search } from '@orama/orama'
 import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
 
+import { Database } from "bun:sqlite";
+import { generateToken } from './utils';
+
 import Elysia from 'elysia'
 
 const imageSchema = {
@@ -16,27 +19,34 @@ interface Image {
 }
 console.log("🚀 Starting server")
 
+console.log("📦 Loading SQLite DB")
+const tokenDB = new Database('tokens.db')
+tokenDB.exec('CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY, userid TEXT)')
+
+// list number of tokens
+const tokens = tokenDB.prepare('SELECT * FROM tokens').all()
+console.log("✅ SQLite DB loaded with", tokens.length, "tokens")
+
 // check if db.msp exists
-console.log("⛁  Loading db")
-let db = await create({ schema: imageSchema })
+console.log("⛁  Loading Vector DB")
+let vectorDB = await create({ schema: imageSchema })
 try {
-    db = await restoreFromFile('binary', 'db.msp')
+    vectorDB = await restoreFromFile('binary', 'db.msp')
 } catch (e) {
     console.log('❌ No db.msp file found; creating new db')
 }
-console.log(`✅ db loaded with ${await count(db)} images`)
+console.log(`✅ Vector DB loaded with ${await count(vectorDB)} images`)
 
 console.log("⚙️  Setting up handlers")
 process.on('SIGINT', async () => {
-    await persistToFile(db, 'binary', "db.msp")
+    await persistToFile(vectorDB, 'binary', "db.msp")
     process.exit()
 })
 
 process.on("SIGTERM", async () => {
-    await persistToFile(db, 'binary', "db.msp")
+    await persistToFile(vectorDB, 'binary', "db.msp")
     process.exit()
 })
-
 console.log("✅ Handlers set up")
 
 // start elysia
@@ -59,7 +69,7 @@ const elysia = new Elysia()
         }
 
         // search for images
-        const results = await search<typeof db, Image>(db, { term: query as string })
+        const results = await search<typeof vectorDB, Image>(vectorDB, { term: query as string })
         const images = results.hits.map((hit) => hit.document)
 
         return images.filter((image) => image.owner === userID)
@@ -81,11 +91,63 @@ const elysia = new Elysia()
 
         // insert image into db
         try {
-            await insert(db, { title, tags, uri, owner })
+            await insert(vectorDB, { title, tags, uri, owner })
 
-            await persistToFile(db, 'binary', "db.msp")
+            await persistToFile(vectorDB, 'binary', "db.msp")
         } catch (e) {
             return { error: 'Failed to insert image' }
+        }
+
+        return { success: true }
+    })
+    .post('/token/new', async ({ request }) => {
+        const { userID } = await request.json()
+        const bearer = request.headers.get('Authorization');
+
+        // check if user is authenticated
+        if (bearer !== process.env.TOKEN) {
+            return { error: 'Unauthorized' }
+        }
+
+        if (!userID) {
+            return { error: 'Invalid data' }
+        }
+
+        // generate token
+        const token = await generateToken(tokenDB)
+
+        // insert token into db
+        try {
+            tokenDB.prepare('INSERT INTO tokens (token, userid) VALUES (?, ?)').run(token, userID)
+        } catch (e) {
+            return { error: 'Failed to insert token' }
+        }
+
+        return { success: true, token }
+    })
+    .post('/token/remove', async ({ request }) => {
+        const { token } = await request.json()
+        const bearer = request.headers.get('Authorization');
+
+        // check if user is authenticated
+        if (bearer !== process.env.TOKEN) {
+            return { error: 'Unauthorized' }
+        }
+
+        if (!token) {
+            return { error: 'Invalid token data' }
+        }
+
+        // remove token from db
+        try {
+            // check if token exists
+            if (!tokenDB.prepare('SELECT * FROM tokens WHERE token = ?').get(token)) {
+                return { error: 'Token not found' }
+            }
+
+            tokenDB.prepare('DELETE FROM tokens WHERE token = ?').run(token)
+        } catch (e) {
+            return { error: 'Failed to remove token' }
         }
 
         return { success: true }
@@ -93,4 +155,3 @@ const elysia = new Elysia()
     .listen(4221)
 
 console.log("✅ Elysia started at http://localhost:4221")
-

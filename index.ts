@@ -2,7 +2,7 @@ import { count, create, insert, search } from '@orama/orama'
 import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
 
 import { Database } from "bun:sqlite";
-import { generateToken } from './utils';
+import { generateToken, getTokenData } from './utils';
 
 import Elysia from 'elysia'
 
@@ -56,15 +56,17 @@ const elysia = new Elysia()
     .get('/', () => "Hello from Elysia! 🦊")
     .post('/query', async ({ request }) => {
         // get search query
-        const { userID, query } = await request.json()
+        const { query } = await request.json()
         const bearer = request.headers.get('Authorization');
 
+        const tokenData = await getTokenData(tokenDB, bearer!)
+
         // check if user is authenticated
-        if (bearer !== process.env.TOKEN) {
+        if (!tokenData) {
             return { error: 'Unauthorized' }
         }
 
-        if (!userID || !query) {
+        if (!query) {
             return { error: 'Invalid query' }
         }
 
@@ -72,26 +74,28 @@ const elysia = new Elysia()
         const results = await search<typeof vectorDB, Image>(vectorDB, { term: query as string })
         const images = results.hits.map((hit) => hit.document)
 
-        return images.filter((image) => image.owner === userID)
+        return images.filter((image) => image.owner === tokenData.userid)
     })
     .post('/insert', async ({ request }) => {
         // get image data
-        const { title, tags, uri, owner } = await request.json()
+        const { title, tags, uri } = await request.json()
         const bearer = request.headers.get('Authorization');
 
+        const tokenData = await getTokenData(tokenDB, bearer!)
+
         // check if user is authenticated
-        if (bearer !== process.env.TOKEN) {
+        if (!tokenData) {
             return { error: 'Unauthorized' }
         }
 
         // ensure that image has the same type as the interface Image
-        if (!title || !tags || !uri || !owner) {
+        if (!title || !tags || !uri) {
             return { error: 'Invalid image data' }
         }
 
         // insert image into db
         try {
-            await insert(vectorDB, { title, tags, uri, owner })
+            await insert(vectorDB, { title, tags, uri, owner: tokenData.userid })
 
             await persistToFile(vectorDB, 'binary', "db.msp")
         } catch (e) {
@@ -155,3 +159,4 @@ const elysia = new Elysia()
     .listen(4221)
 
 console.log("✅ Elysia started at http://localhost:4221")
+console.log("🚀 Server Started in", Bun.nanoseconds() / 1000000, "milliseconds!")

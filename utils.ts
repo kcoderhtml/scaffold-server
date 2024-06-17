@@ -9,3 +9,8 @@ export async function generateToken(tokenDB: Database) {
 
     return token
 }
+
+export async function getTokenData(tokenDB: Database, token: string): Promise<{ token: string, userid: string } | null> {
+    // get token data from db
+    return tokenDB.prepare('SELECT * FROM tokens WHERE token = ?').get(token) as { token: string, userid: string };
+}

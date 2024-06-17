@@ -192,6 +192,9 @@ const elysia = new Elysia()
 
         return { success: true }
     })
+    .onRequest(({ request }) => {
+        console.log(`📡  \x1b[32m[${new Date().toLocaleString()}]\x1b[0m - ${request.method} ${request.url}`);
+    })
     .listen(4221)
 
 console.log("✅ Elysia started at http://localhost:4221")

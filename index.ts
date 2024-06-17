@@ -1,4 +1,4 @@
-import { create, insert, search } from '@orama/orama'
+import { count, create, insert, search } from '@orama/orama'
 import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
 
 import Elysia from 'elysia'
@@ -24,7 +24,7 @@ try {
 } catch (e) {
     console.log('❌ No db.msp file found; creating new db')
 }
-console.log("✅ db loaded")
+console.log(`✅ db loaded with ${await count(db)} images`)
 
 console.log("⚙️  Setting up handlers")
 process.on('SIGINT', async () => {
@@ -44,7 +44,7 @@ console.log("🦊 Starting Elysia")
 
 const elysia = new Elysia()
     .get('/', () => "Hello from Elysia! 🦊")
-    .get('/query', async ({ request }) => {
+    .post('/query', async ({ request }) => {
         // get search query
         const { userID, query } = await request.json()
         const bearer = request.headers.get('Authorization');
@@ -59,7 +59,7 @@ const elysia = new Elysia()
         }
 
         // search for images
-        const results = await search<typeof db, Image>(db, query)
+        const results = await search<typeof db, Image>(db, { term: query as string })
         const images = results.hits.map((hit) => hit.document)
 
         return images.filter((image) => image.owner === userID)
@@ -82,6 +82,8 @@ const elysia = new Elysia()
         // insert image into db
         try {
             await insert(db, { title, tags, uri, owner })
+
+            await persistToFile(db, 'binary', "db.msp")
         } catch (e) {
             return { error: 'Failed to insert image' }
         }

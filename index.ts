@@ -6,6 +6,19 @@ import { generateToken, getTokenData } from './utils';
 
 import Elysia from 'elysia'
 
+console.log("----------------------------------\nScaffold Server\n----------------------------------\n")
+console.log("🚀 Starting server")
+
+console.log("📦 Loading SQLite DB")
+const tokenDB = new Database('data/tokens.db')
+tokenDB.exec('CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY, userid TEXT)')
+
+// list number of tokens
+const tokens = tokenDB.prepare('SELECT * FROM tokens').all()
+console.log("✅ SQLite DB loaded with", tokens.length, "tokens")
+
+// check if db.msp exists
+console.log("⛁  Loading Vector DB")
 const imageSchema = {
     title: 'string',
     tags: 'string[]',
@@ -18,35 +31,22 @@ interface Image {
     owner: string
 }
 
-console.log("----------------------------------\nScaffold Server\n----------------------------------\n")
-console.log("🚀 Starting server")
-
-console.log("📦 Loading SQLite DB")
-const tokenDB = new Database('tokens.db')
-tokenDB.exec('CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY, userid TEXT)')
-
-// list number of tokens
-const tokens = tokenDB.prepare('SELECT * FROM tokens').all()
-console.log("✅ SQLite DB loaded with", tokens.length, "tokens")
-
-// check if db.msp exists
-console.log("⛁  Loading Vector DB")
 let vectorDB = await create({ schema: imageSchema })
 try {
-    vectorDB = await restoreFromFile('binary', 'db.msp')
+    vectorDB = await restoreFromFile('binary', 'data/vectorDB.msp')
 } catch (e) {
-    console.log('❌ No db.msp file found; creating new db')
+    console.log('❌ No data/vectorDB.msp file found; creating new Vector DB')
 }
 console.log(`✅ Vector DB loaded with ${await count(vectorDB)} images`)
 
 console.log("⚙️  Setting up handlers")
 process.on('SIGINT', async () => {
-    await persistToFile(vectorDB, 'binary', "db.msp")
+    await persistToFile(vectorDB, 'binary', "data/vectorDB")
     process.exit()
 })
 
 process.on("SIGTERM", async () => {
-    await persistToFile(vectorDB, 'binary', "db.msp")
+    await persistToFile(vectorDB, 'binary', "data/vectorDB")
     process.exit()
 })
 console.log("✅ Handlers set up")

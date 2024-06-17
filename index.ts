@@ -1,4 +1,4 @@
-import { count, create, insert, search } from '@orama/orama'
+import { count, create, getByID, insert, remove, search } from '@orama/orama'
 import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
 
 import { Database } from "bun:sqlite";
@@ -72,7 +72,10 @@ const elysia = new Elysia()
 
         // search for images
         const results = await search<typeof vectorDB, Image>(vectorDB, { term: query as string })
-        const images = results.hits.map((hit) => hit.document)
+        const images = results.hits.map((hit) => {
+            const { document, id } = hit;
+            return { ...document, id };
+        });
 
         return images.filter((image) => image.owner === tokenData.userid)
     })
@@ -100,6 +103,39 @@ const elysia = new Elysia()
             await persistToFile(vectorDB, 'binary', "db.msp")
         } catch (e) {
             return { error: 'Failed to insert image' }
+        }
+
+        return { success: true }
+    })
+    .post('/remove', async ({ request }) => {
+        // get image data
+        const { id } = await request.json()
+        const bearer = request.headers.get('Authorization');
+
+        const tokenData = await getTokenData(tokenDB, bearer!)
+
+        // check if user is authenticated
+        if (!tokenData) {
+            return { error: 'Unauthorized' }
+        }
+
+        if (!id) {
+            return { error: 'Invalid image data' }
+        }
+
+        // remove image from db
+        try {
+            // check that the id exists and the owner is the same as the token
+            const image = await getByID(vectorDB, id)
+            if (!image || image.owner !== tokenData.userid) {
+                return { error: 'Image not found' }
+            }
+
+            await remove(vectorDB, id)
+
+            await persistToFile(vectorDB, 'binary', "db.msp")
+        } catch (e) {
+            return { error: 'Failed to remove image' }
         }
 
         return { success: true }

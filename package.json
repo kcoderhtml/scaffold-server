@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@orama/orama": "^2.0.19",
-    "@orama/plugin-data-persistence": "^2.0.19"
+    "@orama/plugin-data-persistence": "^2.0.19",
+    "elysia": "^1.0.23"
   }
 }

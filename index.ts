@@ -1,23 +1,35 @@
 import { create, insert, search } from '@orama/orama'
-import { persist, restore } from '@orama/plugin-data-persistence'
+import { persistToFile, restoreFromFile } from '@orama/plugin-data-persistence/server'
 
-const movieSchema = {
+const imageSchema = {
     title: 'string',
+    tags: 'string[]',
 } as const
-const db = await create({ schema: movieSchema })
 
-interface Movie {
-    title: string,
-    year: number,
+interface Image {
+    title: string
+    tags: string[]
+    uri: string
+    owner: string
 }
 
-await insert(db, { title: 'The Matrix', year: 1999 })
-await insert(db, { title: 'Inception', year: 2010 })
-await insert(db, { title: 'Interstellar', year: 2014 })
-await insert(db, { title: 'Tenet', year: 2020 })
-await insert(db, { title: 'Dune', year: 2021 })
-await insert(db, { title: 'The Matrix Resurrections', year: 2021 })
+// check if db.msp exists
+let db = await create({ schema: imageSchema })
+try {
+    db = await restoreFromFile('binary', 'db.msp')
+} catch (e) {
+    console.log('No db.msp file found')
+}
 
-const searchResult = await search<typeof db, Movie>(db, { term: 'Matrix' })
-
+const searchResult = await search<typeof db, Image>(db, { term: 'example' })
 console.log(searchResult.hits.map(hit => hit.document.title))
+
+process.on('SIGINT', async () => {
+    await persistToFile(db, 'binary', "db.msp")
+    process.exit()
+})
+
+process.on("SIGTERM", async () => {
+    await persistToFile(db, 'binary', "db.msp")
+    process.exit()
+})

@@ -5,6 +5,8 @@ on:
     branches: [master]
 permissions:
   contents: write
+env:
+  GH_TOKEN: ${{ github.token }}
 jobs:
   generate_changelog:
     runs-on: ubuntu-latest

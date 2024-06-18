@@ -39,4 +39,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           id: ${{ github.event.release.id }}
           body: |
-            ${{ steps.generate_changelog.outputs.generate_changelog.CHANGELOG }}
+            ${{ steps.generate_changelog.outputs.CHANGELOG }}

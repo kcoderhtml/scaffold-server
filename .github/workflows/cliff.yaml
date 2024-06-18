@@ -19,24 +19,10 @@ jobs:
         uses: orhun/git-cliff-action@v3
         with:
           config: cliff.toml
-          args: --verbose
+          args: --verbose --latest
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Put changelot to env
-        id: generate_changelog
-        run: |
-          {
-            echo 'CHANGELOG<<EOF'
-            cat CHANGELOG.md
-            echo EOF
-          } >> "$GITHUB_ENV"
-
       - name: Add changelog to release
-        uses: irongut/EditRelease@v1.2.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          id: ${{ github.event.release.id }}
-          body: |
-            ${{ steps.generate_changelog.outputs.CHANGELOG }}
+        run: gh release edit ${{ github.event.release.tag_name }} -F CHANGELOG.md

@@ -3,7 +3,8 @@ on:
   release:
     types: [published]
     branches: [master]
-
+permissions:
+  contents: write
 jobs:
   generate_changelog:
     runs-on: ubuntu-latest

@@ -56,6 +56,27 @@ fetch('http://localhost:4221/query', {
 })
 ```
 
+To remove an image:
+
+```bash
+curl -X POST -H "Authorization: 7e09bb82-5b78-4688-acbd-9d6c7ae49b60" http://localhost:4221/remove -d '{"id": "32323-d"}'
+```
+
+or as a fetch:
+
+```typescript
+fetch('http://localhost:4221/remove', {
+    method: 'POST',
+    headers: {
+        'Authorization: 7e09bb82-5b78-4688-acbd-9d6c7ae49b60',
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        id: '32323-d'
+    })
+})
+```
+
 To generate a token:
 
 ```bash

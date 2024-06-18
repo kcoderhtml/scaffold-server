@@ -5,6 +5,7 @@ import { Database } from "bun:sqlite";
 import { generateToken, getTokenData } from './utils';
 
 import Elysia from 'elysia'
+const version = require('./package.json').version
 
 console.log("----------------------------------\nScaffold Server\n----------------------------------\n")
 console.log("🚀 Starting server")
@@ -194,10 +195,13 @@ const elysia = new Elysia()
 
         return { success: true }
     })
+    .get('/version', () => {
+        return { version }
+    })
     .onRequest(({ request }) => {
         console.log(`📡  \x1b[32m[${new Date().toLocaleString()}]\x1b[0m - ${request.method} ${request.url}`);
     })
     .listen(4221)
 
 console.log("✅ Elysia started at http://localhost:4221")
-console.log("🚀 Server Started in", Bun.nanoseconds() / 1000000, "milliseconds!", "\n\n----------------------------------\n")
+console.log("🚀 Server Started in", Bun.nanoseconds() / 1000000, "milliseconds on version:", version + "!", "\n\n----------------------------------\n")

@@ -174,7 +174,6 @@ dist
 # Finder (MacOS) folder config
 .DS_Store
 
-db.msp
-tokens.db
-
 CHANGELOG.md
+
+data

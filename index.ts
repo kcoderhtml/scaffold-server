@@ -41,12 +41,12 @@ console.log(`✅ Vector DB loaded with ${await count(vectorDB)} images`)
 
 console.log("⚙️  Setting up handlers")
 process.on('SIGINT', async () => {
-    await persistToFile(vectorDB, 'binary', "data/vectorDB")
+    await persistToFile(vectorDB, 'binary', "data/vectorDB.msp")
     process.exit()
 })
 
 process.on("SIGTERM", async () => {
-    await persistToFile(vectorDB, 'binary', "data/vectorDB")
+    await persistToFile(vectorDB, 'binary', "data/vectorDB.msp")
     process.exit()
 })
 console.log("✅ Handlers set up")

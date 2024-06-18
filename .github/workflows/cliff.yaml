@@ -1,0 +1,36 @@
+name: Generate Changelog
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  generate_changelog:
+    runs-on: ubuntu-latest
+    name: Generate Changelog
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Generate a changelog
+        uses: orhun/git-cliff-action@v3
+        with:
+          config: cliff.toml
+          args: --verbose
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Put changelot to env
+        id: generate_changelog
+        run: echo "::set-output name=changelog::$(cat CHANGELOG.md)"
+
+      - name: Add changelog to release
+        uses: irongut/EditRelease@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          id: ${{ github.event.release.id }}
+          body: |
+            ${{ steps.generate_changelog.outputs.changelog }}

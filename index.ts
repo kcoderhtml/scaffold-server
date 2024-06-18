@@ -17,7 +17,7 @@ tokenDB.exec('CREATE TABLE IF NOT EXISTS tokens (token TEXT PRIMARY KEY, userid 
 const tokens = tokenDB.prepare('SELECT * FROM tokens').all()
 console.log("✅ SQLite DB loaded with", tokens.length, "tokens")
 
-// check if db.msp exists
+// check if data/vectorDB.msp exists
 console.log("⛁  Loading Vector DB")
 const imageSchema = {
     title: 'string',
@@ -100,14 +100,14 @@ const elysia = new Elysia()
 
         // insert image into db
         try {
-            await insert(vectorDB, { title, tags, uri, owner: tokenData.userid })
+            const cloudID = await insert(vectorDB, { title, tags, uri, owner: tokenData.userid })
 
-            await persistToFile(vectorDB, 'binary', "db.msp")
+            await persistToFile(vectorDB, 'binary', "data/vectorDB.msp")
+
+            return { success: true, cloudID: cloudID }
         } catch (e) {
             return { error: 'Failed to insert image' }
         }
-
-        return { success: true }
     })
     .post('/remove', async ({ request }) => {
         // get image data
@@ -135,7 +135,7 @@ const elysia = new Elysia()
 
             await remove(vectorDB, id)
 
-            await persistToFile(vectorDB, 'binary', "db.msp")
+            await persistToFile(vectorDB, 'binary', "data/vectorDB.msp")
         } catch (e) {
             return { error: 'Failed to remove image' }
         }

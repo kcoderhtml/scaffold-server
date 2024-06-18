@@ -25,7 +25,12 @@ jobs:
 
       - name: Put changelot to env
         id: generate_changelog
-        run: echo "$(cat CHANGELOG.md)"  >> "$GITHUB_OUTPUT"
+        run: |
+          {
+            echo 'CHANGELOG<<EOF'
+            cat CHANGELOG.md
+            echo EOF
+          } >> "$GITHUB_ENV"
 
       - name: Add changelog to release
         uses: irongut/EditRelease@v1.2.0
@@ -33,4 +38,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           id: ${{ github.event.release.id }}
           body: |
-            ${{ steps.generate_changelog.outputs.generate_changelog }}
+            ${{ steps.generate_changelog.outputs.generate_changelog.CHANGELOG }}

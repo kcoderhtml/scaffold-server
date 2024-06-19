@@ -4,6 +4,7 @@ FROM oven/bun:1.1.13 as base
 WORKDIR /usr/src/app
 
 # install with --production (exclude devDependencies)
+FROM base AS build
 RUN mkdir -p /temp/prod
 COPY package.json bun.lockb /temp/prod/
 RUN cd /temp/prod && bun install --frozen-lockfile --production
@@ -11,7 +12,7 @@ RUN bun build --compile --minify --sourcemap ./index.ts --outfile scaffoldServer
 
 # copy production build to release image
 FROM base AS release
-COPY --from=install /temp/prod/scaffoldServer .
+COPY --from=build /temp/prod/scaffoldServer .
 RUN chown -R bun:bun .
 
 # make data directory

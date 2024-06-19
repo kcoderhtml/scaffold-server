@@ -6,9 +6,8 @@ WORKDIR /usr/src/app
 # install with --production (exclude devDependencies)
 FROM base AS build
 RUN mkdir -p /temp/prod
-COPY package.json bun.lockb /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
-RUN bun build --compile --minify --sourcemap ./index.ts --outfile scaffoldServer
+COPY . /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production && bun build --compile --minify --sourcemap ./index.ts --outfile scaffoldServer
 
 # copy production build to release image
 FROM base AS release

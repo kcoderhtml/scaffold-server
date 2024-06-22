@@ -28,7 +28,6 @@ const imageSchema = {
 interface Image {
     title: string
     tags: string[]
-    uri: string
     owner: string
 }
 
@@ -84,7 +83,7 @@ const elysia = new Elysia()
     })
     .post('/insert', async ({ request }) => {
         // get image data
-        const { title, tags, uri } = await request.json()
+        const { title, tags } = await request.json()
         const bearer = request.headers.get('Authorization');
 
         const tokenData = await getTokenData(tokenDB, bearer!)
@@ -95,13 +94,13 @@ const elysia = new Elysia()
         }
 
         // ensure that image has the same type as the interface Image
-        if (!title || !tags || !uri) {
+        if (!title || !tags) {
             return { error: 'Invalid image data' }
         }
 
         // insert image into db
         try {
-            const cloudID = await insert(vectorDB, { title, tags, uri, owner: tokenData.userid })
+            const cloudID = await insert(vectorDB, { title, tags, owner: tokenData.userid })
 
             await persistToFile(vectorDB, 'binary', "data/vectorDB.msp")
 
